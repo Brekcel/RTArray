@@ -8,6 +8,7 @@
 
 #include <memory>
 
+//c++11
 #if __cplusplus >= 201103L || _MSVC_LANG >= 201103L
 #define RTARRAY_MOVE(x) std::move(x)
 #ifndef RTARRAY_NO_FUNCTIONAL
@@ -42,7 +43,6 @@ private:
 	size_type length;
 
 public:
-
 #pragma region CONSTRUCTORS AND DESTRUCTOR
 //CONSTRUCTORS AND DESTRUCTOR
 
@@ -78,7 +78,7 @@ public:
 /*
 	///Construct a new RTArray with a given length, allocator, and optional arguments.
 	///NOTES
-	///If you do not have an allocator or wish to use the default allocator, use the other ctor. Due to the nature of variadic template arguments, 
+	///If you do not have an allocator or wish to use the default allocator, use the other ctor. Due to the nature of variadic template arguments,
 	///different ctor's must be created for wether or not we have an allocator.
 	///ARGUMENTS
 	///size_type length: The length of the array
@@ -113,10 +113,9 @@ public:
 		//Finally, deallocated the array
 		allocator.deallocate(data, length);
 	}
-	
+
 //END CONSTRUCTORS AND DESTUCTOR
 #pragma endregion
-
 	///Pointer to the beginning of the array
 	inline pointer begin() {
 		return &data[0];
@@ -136,5 +135,14 @@ public:
 	inline const_pointer end() const {
 		return &data[length];
 	}
+
+	inline reference operator[](size_t idx) {
+		return data[idx];
+	}
+
+	inline const_reference operator[](size_t idx) const {
+		return data[idx];
+	}
+
 };
 #endif //RTARRAY_H
