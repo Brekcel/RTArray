@@ -23,9 +23,8 @@
 
 #define RTARRAY_MOVE(x) std::move(x)
 
-#ifndef RTARRAY_NO_FUNCTIONAL
+#ifdef RTARRAY_FUNCTIONAL
 #include <functional>
-#define RTARRAY_FUNCTIONAL
 #endif
 
 #else
@@ -51,6 +50,7 @@ public:
 	typedef size_t size_type;
 	typedef ptrdiff_t difference_type;
 
+	typedef T(*fn_pointer)(size_type);
 private:
 
 	Alloc allocator;
@@ -61,23 +61,35 @@ public:
 #pragma region CONSTRUCTORS AND DESTRUCTOR
 //CONSTRUCTORS AND DESTRUCTOR
 
+	
 #ifdef RTARRAY_FUNCTIONAL
 	///Construct a new RTArray with a given length, function pointer, allocator, and optional arguments.
-	///NOTES
-	///If you do not have an allocator or wish to use the default allocator, use the other ctor
+	///
 	///ARGUMENTS
 	///size_type length: The length of the array
 	///std::function<T(size_type)> function: The function pointer that returns a type T. It get's passed the current index of the array.
 	///const Alloc& allocator: The allocator to be used. Defaults to creating a new allocator.
-	template <class... Args>
 	RTArray(size_type length, std::function<T(size_type)> function, Alloc allocator = Alloc()) :
 		allocator(std::move(allocator)), data(allocator.allocate(length)), length(length) {
 		for (size_type i = 0; i < length; ++i) {
 			data[i] = RTARRAY_MOVE(function(i));
 		}
 	}
-#endif
+#else
+	///Construct a new RTArray with a given length, function pointer, allocator, and optional arguments.
+	///This version supports all c++ versions, and doesn't have the overhead of std::function
+	///ARGUMENTS
+	///size_type length: The length of the array
+	///fn_pointer function: The function pointer that returns a type T. It get's passed the current index of the array.
+	///const Alloc& allocator: The allocator to be used. Defaults to creating a new allocator.
+	RTArray(size_type length, fn_pointer function, Alloc allocator = Alloc()) :
+		allocator(std::move(allocator)), data(allocator.allocate(length)), length(length) {
+		for (size_type i = 0; i < length; ++i) {
+			data[i] = RTARRAY_MOVE(function(i));
+		}
+	}
 
+#endif
 	///Constructs a new RTArray with a given length and object to copy into each index.
 	///ARGUMENTS
 	///size_type length: The length of the array
