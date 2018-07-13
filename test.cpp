@@ -2,7 +2,6 @@
 // Created by Brekcel on 7.10.2018.
 //
 
-#define RTARRAY_FUNCTIONAL
 #include "RTArray.h"
 #include <iostream>
 
