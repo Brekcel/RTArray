@@ -35,6 +35,8 @@ int main(int argc, char* argv[]) {
 		return Test(static_cast<int>(idx));
 	});
 	RTArray<Test> arr(20, Test(5));
+	arr[5].x = 7;
+	auto& t = arr[5];
 	__noop();
 	return 0;
 }

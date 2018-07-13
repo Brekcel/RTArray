@@ -4,24 +4,39 @@
 #define RTARRAY_H
 
 //Created by Clayton Breckel on 7.10.2018
-//Header only implementation of a Fixed-Sized known at Runtime (RT) Array
+//Header only implementation of a Fixed-Sized known at Runtime (RT)Array
 
 #include <memory>
 
+//Until very recently, __cplusplus is 199711L on msvc compiler and _MSVC_LANG is the cpp version so check both
+#define RTARRAY_CPPVERSION_ATLEAST(VERSION) ( __cplusplus >= VERSION || _MSVC_LANG >= VERSION)
+
+//c++17
+#if RTARRAY_CPPVERSION_ATLEAST(201703L) //201703L == c++17
+#define RTARRAY_MUST_USE [[nodiscard]]
+#else
+#define RTARRAY_MUST_USE
+#endif
+
 //c++11
-#if __cplusplus >= 201103L || _MSVC_LANG >= 201103L
+#if RTARRAY_CPPVERSION_ATLEAST(201103L) //201103L == c++11
+
 #define RTARRAY_MOVE(x) std::move(x)
+
 #ifndef RTARRAY_NO_FUNCTIONAL
 #include <functional>
 #define RTARRAY_FUNCTIONAL
 #endif
+
 #else
+
 #ifdef RTARRAY_FUNCTIONAL
 #error To use functional constructors, you must use c++11 or greater.
 #endif
-#define RTARRAY_MOVE(x) x
-#endif
 
+#define RTARRAY_MOVE(x) x
+
+#endif
 
 //T is the type that's to be used for the array
 template <class T, class Alloc = std::allocator<T>>
@@ -45,7 +60,6 @@ private:
 public:
 #pragma region CONSTRUCTORS AND DESTRUCTOR
 //CONSTRUCTORS AND DESTRUCTOR
-
 
 #ifdef RTARRAY_FUNCTIONAL
 	///Construct a new RTArray with a given length, function pointer, allocator, and optional arguments.
@@ -117,32 +131,39 @@ public:
 //END CONSTRUCTORS AND DESTUCTOR
 #pragma endregion
 	///Pointer to the beginning of the array
-	inline pointer begin() {
+	RTARRAY_MUST_USE inline pointer begin() {
 		return &data[0];
 	}
 
 	///Pointer to the end of the array
-	inline pointer end() {
+	RTARRAY_MUST_USE inline pointer end() {
 		return &data[length];
 	}
 
 	///Const pointer to the beginning of the array
-	inline const_pointer begin() const {
+	RTARRAY_MUST_USE inline const_pointer begin() const {
 		return &data[0];
 	}
 
 	///Const pointer to the end of the array
-	inline const_pointer end() const {
+	RTARRAY_MUST_USE inline const_pointer end() const {
 		return &data[length];
 	}
 
-	inline reference operator[](size_t idx) {
+	RTARRAY_MUST_USE inline reference operator[](size_t idx) {
 		return data[idx];
 	}
 
-	inline const_reference operator[](size_t idx) const {
+	RTARRAY_MUST_USE inline const_reference operator[](size_t idx) const {
 		return data[idx];
 	}
 
 };
+
+//Undefine all macros used
+#undef RTARRAY_MUST_USE
+#undef RTARRAY_MOVE
+#undef RTARRAY_FUNCTIONAL
+#undef RTARRAY_CPPVERSION_ATLEAST
+
 #endif //RTARRAY_H
