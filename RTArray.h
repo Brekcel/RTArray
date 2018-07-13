@@ -37,6 +37,11 @@
 
 #endif
 
+//ANY VERSION
+#ifdef _DEBUG
+#define RTARRAY_OOB_CHECK
+#endif
+
 //T is the type that's to be used for the array
 template <class T, class Alloc = std::allocator<T>>
 class RTArray {
@@ -61,7 +66,7 @@ public:
 #pragma region CONSTRUCTORS AND DESTRUCTOR
 //CONSTRUCTORS AND DESTRUCTOR
 
-	
+
 #ifdef RTARRAY_FUNCTIONAL
 	///Construct a new RTArray with a given length, function pointer, allocator, and optional arguments.
 	///
@@ -163,10 +168,16 @@ public:
 	}
 
 	RTARRAY_MUST_USE inline reference operator[](size_t idx) {
+	#ifdef RTARRAY_OOB_CHECK
+		assert(idx < length);
+	#endif
 		return data[idx];
 	}
 
 	RTARRAY_MUST_USE inline const_reference operator[](size_t idx) const {
+	#ifdef RTARRAY_OOB_CHECK
+		assert(idx < length);
+	#endif
 		return data[idx];
 	}
 
