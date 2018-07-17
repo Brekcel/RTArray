@@ -84,7 +84,7 @@ public:
 	template <typename Function>
 	RTArray(size_type length, Function function
 	#ifdef RTARRAY_ALLOC
-		, Alloc allocator = Alloc()) : allocator(std::move(allocator)),
+		, Alloc allocator = Alloc()) : allocator(RTARRAY_MOVE(allocator)),
 	#else
 		) :
 #endif
@@ -102,7 +102,7 @@ public:
 
 	RTArray(size_type length, const_reference to_be_copied
 	#ifdef RTARRAY_ALLOC
-		, Alloc allocator = Alloc()) : allocator(std::move(allocator)),
+		, Alloc allocator = Alloc()) : allocator(RTARRAY_MOVE(allocator)),
 	#else
 		) :
 #endif
