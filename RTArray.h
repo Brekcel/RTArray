@@ -14,7 +14,7 @@
 //c++17
 #if RTARRAY_CPPVERSION_ATLEAST(201703L) //201703L == c++17
 #define RTARRAY_MUST_USE [[nodiscard]]
-#else
+#else /* ^^^ CAN HAZ [[nodiscard]] ^^^ // vvv NO CAN HAZ [[nodiscard]] vvv */ // <- yyvals.h line 431 in MSVC stdlib
 #define RTARRAY_MUST_USE
 #endif
 
@@ -40,10 +40,27 @@
 //ANY VERSION
 #ifdef _DEBUG
 #define RTARRAY_OOB_CHECK
+#include <assert.h>
+#endif
+
+#ifdef RTARRAY_ALLOC
+#define RTARRAY_DO_ALLOCATE(LEN) allocator.allocate(LEN)
+#define RTARRAY_DO_CONSTRUCT(POINTER, ...) allocator.construct(POINTER, __VA_ARGS__)
+#define RTARRAY_DO_DESTROY(POINTER) allocator.destroy(POINTER)
+#define RTARRAY_DO_DEALLOCATE(POINTER, LEN) allocator.deallocate(POINTER, LEN)
+#else
+#define RTARRAY_DO_ALLOCATE(LEN) reinterpret_cast<T*>(new char[sizeof(T) * LEN])
+#define RTARRAY_DO_CONSTRUCT(POINTER, ...) new (POINTER) T(__VA_ARGS__)
+#define RTARRAY_DO_DESTROY(POINTER) (POINTER)->~T()
+#define RTARRAY_DO_DEALLOCATE(POINTER, LEN) delete[] reinterpret_cast<char*>(POINTER)
 #endif
 
 //T is the type that's to be used for the array
-template <class T, class Alloc = std::allocator<T>>
+template <class T
+#ifdef RTARRAY_ALLOC
+	, class Alloc = std::allocator<T>
+#endif
+>
 class RTArray {
 public:
 	//Standard std::container typedefs
@@ -55,15 +72,21 @@ public:
 	typedef size_t size_type;
 	typedef ptrdiff_t difference_type;
 
+#ifdef RTARRAY_ALLOC
+	typedef Alloc Alloc;
+#endif
+
 	typedef T(*fn_pointer)(size_type);
 private:
 
+#ifdef RTARRAY_ALLOC
 	Alloc allocator;
+#endif
+
 	pointer data;
 	size_type length;
 
 public:
-#pragma region CONSTRUCTORS AND DESTRUCTOR
 //CONSTRUCTORS AND DESTRUCTOR
 
 
@@ -87,8 +110,13 @@ public:
 	///size_type length: The length of the array
 	///fn_pointer function: The function pointer that returns a type T. It get's passed the current index of the array.
 	///const Alloc& allocator: The allocator to be used. Defaults to creating a new allocator.
-	RTArray(size_type length, fn_pointer function, Alloc allocator = Alloc()) :
-		allocator(std::move(allocator)), data(allocator.allocate(length)), length(length) {
+	RTArray(size_type length, fn_pointer function
+	#ifdef RTARRAY_ALLOC
+		, Alloc allocator = Alloc()) : allocator(std::move(allocator)),
+	#else
+		) :
+#endif
+	data(RTARRAY_DO_ALLOCATE(length)), length(length) {
 		for (size_type i = 0; i < length; ++i) {
 			data[i] = RTARRAY_MOVE(function(i));
 		}
@@ -100,10 +128,16 @@ public:
 	///size_type length: The length of the array
 	///const_reference to_be_copied: The value to be copied into each index
 	///const Alloc& allocator: The allocator to be used. Defaults to creating a new allocator.
-	RTArray(size_type length, const_reference to_be_copied, Alloc allocator = Alloc()) :
-		allocator(std::move(allocator)), data(allocator.allocate(length)), length(length) {
+
+	RTArray(size_type length, const_reference to_be_copied
+	#ifdef RTARRAY_ALLOC
+		, Alloc allocator = Alloc()) : allocator(std::move(allocator)),
+	#else
+		) :
+#endif
+	data(RTARRAY_DO_ALLOCATE(length)), length(length) {
 		for (size_type i = 0; i < length; ++i) {
-			allocator.construct(&data[i], to_be_copied);
+			RTARRAY_DO_CONSTRUCT(&data[i], to_be_copied);
 		}
 	}
 /*
@@ -139,14 +173,14 @@ public:
 	~RTArray() {
 		//Destroy each element in reverse order
 		for (size_type i = length - 1; i > 0; --i) {
-			allocator.destroy(&data[i]);
+			RTARRAY_DO_DESTROY(&data[i]);
 		}
 		//Finally, deallocated the array
-		allocator.deallocate(data, length);
+		RTARRAY_DO_DEALLOCATE(data, length);
 	}
 
 //END CONSTRUCTORS AND DESTUCTOR
-#pragma endregion
+
 	///Pointer to the beginning of the array
 	RTARRAY_MUST_USE inline pointer begin() {
 		return &data[0];
@@ -188,5 +222,9 @@ public:
 #undef RTARRAY_MOVE
 #undef RTARRAY_FUNCTIONAL
 #undef RTARRAY_CPPVERSION_ATLEAST
+#undef RTARRAY_DO_ALLOCATE
+#undef RTARRAY_DO_CONSTRUCT
+#undef RTARRAY_DO_DESTROY
+#undef RTARRAY_DO_DEALLOCATE
 
-#endif //RTARRAY_H
+#endif RTARRAY_H

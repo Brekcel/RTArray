@@ -1,7 +1,7 @@
 //
 // Created by Brekcel on 7.10.2018.
 //
-
+//#define RTARRAY_ALLOC
 #include "RTArray.h"
 #include <iostream>
 
@@ -29,6 +29,8 @@ struct Test {
 
 
 int main(int argc, char* argv[]) {
+
+	std::cout << "RTArraySize: " << sizeof(RTArray<Test>) << std::endl;
 	//std::vector
 	RTArray<Test> array(20, [](size_t idx) {
 		return Test(static_cast<int>(idx));
