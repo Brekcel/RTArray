@@ -20,21 +20,9 @@
 
 //c++11
 #if RTARRAY_CPPVERSION_ATLEAST(201103L) //201103L == c++11
-
 #define RTARRAY_MOVE(x) std::move(x)
-
-#ifdef RTARRAY_FUNCTIONAL
-#include <functional>
-#endif
-
 #else
-
-#ifdef RTARRAY_FUNCTIONAL
-#error To use functional constructors, you must use c++11 or greater.
-#endif
-
 #define RTARRAY_MOVE(x) x
-
 #endif
 
 //ANY VERSION
@@ -75,8 +63,6 @@ public:
 #ifdef RTARRAY_ALLOC
 	typedef Alloc Alloc;
 #endif
-
-	typedef T(*fn_pointer)(size_type);
 private:
 
 #ifdef RTARRAY_ALLOC
@@ -89,28 +75,14 @@ private:
 public:
 //CONSTRUCTORS AND DESTRUCTOR
 
-
-#ifdef RTARRAY_FUNCTIONAL
-	///Construct a new RTArray with a given length, function pointer, allocator, and optional arguments.
-	///
-	///ARGUMENTS
-	///size_type length: The length of the array
-	///std::function<T(size_type)> function: The function pointer that returns a type T. It get's passed the current index of the array.
-	///const Alloc& allocator: The allocator to be used. Defaults to creating a new allocator.
-	RTArray(size_type length, std::function<T(size_type)> function, Alloc allocator = Alloc()) :
-		allocator(std::move(allocator)), data(allocator.allocate(length)), length(length) {
-		for (size_type i = 0; i < length; ++i) {
-			data[i] = RTARRAY_MOVE(function(i));
-		}
-	}
-#else
 	///Construct a new RTArray with a given length, function pointer, allocator, and optional arguments.
 	///This version supports all c++ versions, and doesn't have the overhead of std::function
 	///ARGUMENTS
 	///size_type length: The length of the array
-	///fn_pointer function: The function pointer that returns a type T. It get's passed the current index of the array.
+	///Function function: The function pointer that returns a type T. It get's passed the current index of the array.
 	///const Alloc& allocator: The allocator to be used. Defaults to creating a new allocator.
-	RTArray(size_type length, fn_pointer function
+	template <typename Function>
+	RTArray(size_type length, Function function
 	#ifdef RTARRAY_ALLOC
 		, Alloc allocator = Alloc()) : allocator(std::move(allocator)),
 	#else
@@ -122,7 +94,6 @@ public:
 		}
 	}
 
-#endif
 	///Constructs a new RTArray with a given length and object to copy into each index.
 	///ARGUMENTS
 	///size_type length: The length of the array
@@ -220,7 +191,6 @@ public:
 //Undefine all macros used
 #undef RTARRAY_MUST_USE
 #undef RTARRAY_MOVE
-#undef RTARRAY_FUNCTIONAL
 #undef RTARRAY_CPPVERSION_ATLEAST
 #undef RTARRAY_DO_ALLOCATE
 #undef RTARRAY_DO_CONSTRUCT

@@ -32,8 +32,9 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "RTArraySize: " << sizeof(RTArray<Test>) << std::endl;
 	//std::vector
-	RTArray<Test> array(20, [](size_t idx) {
-		return Test(static_cast<int>(idx));
+	size_t tmp = 0;
+	RTArray<Test> array(20, [&tmp](size_t idx) {
+		return Test(static_cast<int>(idx * ++tmp));
 	});
 	RTArray<Test> arr(20, Test(5));
 	arr[5].x = 7;
