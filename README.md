@@ -16,7 +16,7 @@ RTArray<int> array(5, [](size_t idx) {
 
 Safe array handling to allow use of a runtime sized and allocated array.
 
-Usage of std::allocator to allow for different allocation methods to be used.
+Optional usage of std::allocator to allow for different allocation methods to be used.
 
 If in debug mode or RTARRAY_OOB_CHECK is defined, [] operator is checked for out of bounds errors
 
@@ -26,7 +26,7 @@ If in debug mode or RTARRAY_OOB_CHECK is defined, [] operator is checked for out
 
 #### C++11:
 
-Usage of std::move is certain spots.
+Usage of std::move in certain spots.
 
 Allows use of std::funcion instead of a plain function pointer.
 
