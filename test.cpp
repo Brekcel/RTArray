@@ -1,7 +1,7 @@
 //
 // Created by Brekcel on 7.10.2018.
 //
-//#define RTARRAY_ALLOC
+#define RTARRAY_ALLOC
 #include "RTArray.h"
 #include <iostream>
 

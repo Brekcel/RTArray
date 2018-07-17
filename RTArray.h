@@ -6,8 +6,6 @@
 //Created by Clayton Breckel on 7.10.2018
 //Header only implementation of a Fixed-Sized known at Runtime (RT)Array
 
-#include <memory>
-
 //Until very recently, __cplusplus is 199711L on msvc compiler and _MSVC_LANG is the cpp version so check both
 #define RTARRAY_CPPVERSION_ATLEAST(VERSION) ( __cplusplus >= VERSION || _MSVC_LANG >= VERSION)
 
@@ -32,6 +30,7 @@
 #endif
 
 #ifdef RTARRAY_ALLOC
+#include <memory>
 #define RTARRAY_DO_ALLOCATE(LEN) allocator.allocate(LEN)
 #define RTARRAY_DO_CONSTRUCT(POINTER, ...) allocator.construct(POINTER, __VA_ARGS__)
 #define RTARRAY_DO_DESTROY(POINTER) allocator.destroy(POINTER)
