@@ -76,8 +76,12 @@ private:
 	Alloc allocator;
 #endif
 
-	pointer ptr;
-	size_type arrSize;
+	//ptr is const as there is one and ONLY one situation where it should be changed after creation and that's move.
+	//EVERY other usage of this variable should NOT change the pointed to memory.
+	pointer const ptr;
+
+	//see ptr for why it's const.
+	const size_type arrSize;
 
 public:
 //CONSTRUCTORS AND DESTRUCTOR
@@ -145,8 +149,8 @@ public:
 		allocator(RTARRAY_MOVE(other.allocator)),
 	#endif 
 		ptr(other.ptr), arrSize(other.arrSize) {
-		other.ptr = nullptr;
-		other.arrSize = 0;
+		const_cast<pointer>(other.ptr) = nullptr;
+		static_cast<size_type>(other.arrSize) = 0; //Not really sure why const_cast doesn't work with integer literals...
 	}
 #endif
 ///Destroys all elements in the array, then deallocates the data used by the array.

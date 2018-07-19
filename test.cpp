@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
 	});
 	RTArray<int> arr2 = arr;
 	RTArray<int> arr3 = std::move(arr);
-	int i = arr[3]; //i == 24
+	int i = arr3[3]; //i == 24
 	std::cout << "arr[3]: " << i << std::endl;
 	return 0;
 }
