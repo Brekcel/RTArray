@@ -23,10 +23,11 @@
 #define RTARRAY_MOVE(x) x
 #endif
 
+#include <sstream>
+#include <stdexcept>
 //ANY VERSION
 #ifdef _DEBUG
 #define RTARRAY_OOB_CHECK
-#include <assert.h>
 #endif
 
 #ifdef RTARRAY_ALLOC
@@ -41,6 +42,13 @@
 #define RTARRAY_DO_DESTROY(POINTER) (POINTER)->~T()
 #define RTARRAY_DO_DEALLOCATE(POINTER, LEN) delete[] reinterpret_cast<char*>(POINTER)
 #endif
+
+#define RTARRAY_DO_OOB_CHECK(idx, length) \
+if (idx > length) {\
+std::ostringstream errMsg;\
+errMsg << "Attempted to access element at position " << idx << " in an array of size " << length << ".";\
+throw std::out_of_range(errMsg.str());\
+		}\
 
 //T is the type that's to be used for the array
 template <class T
@@ -68,8 +76,8 @@ private:
 	Alloc allocator;
 #endif
 
-	pointer data;
-	size_type length;
+	pointer ptr;
+	size_type arrSize;
 
 public:
 //CONSTRUCTORS AND DESTRUCTOR
@@ -81,15 +89,15 @@ public:
 	///Function function: The function pointer that returns a type T. It get's passed the current index of the array.
 	///const Alloc& allocator: The allocator to be used. Defaults to creating a new allocator.
 	template <typename Function>
-	RTArray(size_type length, Function function
+	RTArray(size_type arrSize, Function function
 	#ifdef RTARRAY_ALLOC
 		, Alloc allocator = Alloc()) : allocator(RTARRAY_MOVE(allocator)),
 	#else
 		) :
 #endif
-	data(RTARRAY_DO_ALLOCATE(length)), length(length) {
-		for (size_type i = 0; i < length; ++i) {
-			data[i] = RTARRAY_MOVE(function(i));
+	ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
+		for (size_type i = 0; i < arrSize; ++i) {
+			ptr[i] = RTARRAY_MOVE(function(i));
 		}
 	}
 
@@ -99,91 +107,111 @@ public:
 	///const_reference to_be_copied: The value to be copied into each index
 	///const Alloc& allocator: The allocator to be used. Defaults to creating a new allocator.
 
-	RTArray(size_type length, const_reference to_be_copied
+	RTArray(size_type arrSize, const_reference to_be_copied
 	#ifdef RTARRAY_ALLOC
 		, Alloc allocator = Alloc()) : allocator(RTARRAY_MOVE(allocator)),
 	#else
 		) :
 #endif
-	data(RTARRAY_DO_ALLOCATE(length)), length(length) {
-		for (size_type i = 0; i < length; ++i) {
-			RTARRAY_DO_CONSTRUCT(&data[i], to_be_copied);
-		}
-	}
-/*
-	///Construct a new RTArray with a given length, allocator, and optional arguments.
-	///NOTES
-	///If you do not have an allocator or wish to use the default allocator, use the other ctor. Due to the nature of variadic template arguments,
-	///different ctor's must be created for wether or not we have an allocator.
-	///ARGUMENTS
-	///size_type length: The length of the array
-	///const Alloc& allocator: The allocator to be used
-	///Args&&... args: All the arguments to be forwarded to the objects constructor
-	template <class... Args>
-	RTArray(size_type length, const Alloc& allocator, Args&&... args) :
-		allocator(allocator), data(allocator.allocate(length)), length(length) {
-		for (size_type i = 0; i < length; ++i) {
-			allocator.construct(&data[i], std::forward<Args>(args)...);
+	ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
+		for (size_type i = 0; i < arrSize; ++i) {
+			RTARRAY_DO_CONSTRUCT(&ptr[i], to_be_copied);
 		}
 	}
 
-	///Construct a new RTArray with a given length, and optional arguments. This ctor creates a new allocator to be used.
-	///ARGUMENTS
-	///size_type length: The length of the array
-	///Args&&... args: All the arguments to be forwarded to the objects constructor
-	template <class... Args>
-	RTArray(size_type length, Args&&... args) :
-		allocator(Alloc()), data(allocator.allocate(length)), length(length) {
-		for (size_type i = 0; i < length; ++i) {
-			allocator.construct(&data[i], std::forward<Args>(args)...);
-		}
-	}
-*/
 	///Destroys all elements in the array, then deallocates the data used by the array.
 	~RTArray() {
 		//Destroy each element in reverse order
-		for (size_type i = length - 1; i > 0; --i) {
-			RTARRAY_DO_DESTROY(&data[i]);
+		for (size_type i = arrSize - 1; i > 0; --i) {
+			RTARRAY_DO_DESTROY(&ptr[i]);
 		}
 		//Finally, deallocated the array
-		RTARRAY_DO_DEALLOCATE(data, length);
+		RTARRAY_DO_DEALLOCATE(ptr, arrSize);
 	}
 
 //END CONSTRUCTORS AND DESTUCTOR
 
-	///Pointer to the beginning of the array
-	RTARRAY_MUST_USE inline pointer begin() {
-		return &data[0];
+//ELEMENT ACCESS
+
+///Retrieve a reference to the item at position idx in the array. ALWAYS performs bounds checking on the access
+	RTARRAY_MUST_USE inline reference at(size_t idx) {
+		RTARRAY_DO_OOB_CHECK(idx, arrSize);
+		return ptr[idx];
 	}
 
-	///Pointer to the end of the array
-	RTARRAY_MUST_USE inline pointer end() {
-		return &data[length];
+	///Retrieve a const_reference to the item at position idx in the array. ALWAYS performs bounds checking on the access
+	RTARRAY_MUST_USE inline const_reference at(size_t idx) const {
+		RTARRAY_DO_OOB_CHECK(idx, arrSize);
+		return ptr[idx];
+	}
+
+	///Retrieve a reference to the item at position idx in the array. 
+	///Performs bounds checking on the access if compiled in debug mode or if RTARRAY_DO_OOB_CHECK is defined
+	RTARRAY_MUST_USE inline reference operator[](size_t idx) {
+	#ifdef RTARRAY_OOB_CHECK
+		RTARRAY_DO_OOB_CHECK(idx, arrSize);
+	#endif
+		return ptr[idx];
+	}
+
+	///Retrieve a const_reference to the item at position idx in the array. 
+	///Performs bounds checking on the access if compiled in debug mode or if RTARRAY_DO_OOB_CHECK is defined
+	RTARRAY_MUST_USE inline const_reference operator[](size_t idx) const {
+	#ifdef RTARRAY_OOB_CHECK
+		RTARRAY_DO_OOB_CHECK(idx, arrSize);
+	#endif
+		return ptr[idx];
+	}
+
+	///Returns the underlying pointer used by RTArray
+	RTARRAY_MUST_USE inline pointer data() {
+		return ptr;
+	}
+
+	///Returns the underlying pointer used by RTArray
+	RTARRAY_MUST_USE inline const_pointer data() const {
+		return ptr;
+	}
+
+	///Pointer to the beginning of the array
+	RTARRAY_MUST_USE inline reference front() {
+		return &ptr[0];
 	}
 
 	///Const pointer to the beginning of the array
-	RTARRAY_MUST_USE inline const_pointer begin() const {
-		return &data[0];
+	RTARRAY_MUST_USE inline const_reference front() const {
+		return &ptr[0];
+	}
+
+	///Pointer to the end of the array
+	RTARRAY_MUST_USE inline reference back() {
+		return &ptr[arrSize];
 	}
 
 	///Const pointer to the end of the array
-	RTARRAY_MUST_USE inline const_pointer end() const {
-		return &data[length];
+	RTARRAY_MUST_USE inline const_reference back() const {
+		return &ptr[arrSize];
+	}
+//END ELEMENT ACCESS
+
+//CAPACITY
+	///Whether the array is empty or not.
+	///Equivalent to size() == 0;
+	RTARRAY_MUST_USE inline bool empty() const {
+		return size == 0;
 	}
 
-	RTARRAY_MUST_USE inline reference operator[](size_t idx) {
-	#ifdef RTARRAY_OOB_CHECK
-		assert(idx < length);
-	#endif
-		return data[idx];
+	///Retrieves the size of the array
+	RTARRAY_MUST_USE inline size_type size() const {
+		return arrSize;
 	}
 
-	RTARRAY_MUST_USE inline const_reference operator[](size_t idx) const {
-	#ifdef RTARRAY_OOB_CHECK
-		assert(idx < length);
-	#endif
-		return data[idx];
+	///Retrieves the maximum size of the array.
+	///Really just returns the size. 
+	RTARRAY_MUST_USE inline size_type max_size() const {
+		return arrSize;
 	}
+//END CAPACITY
 
 };
 
@@ -195,5 +223,6 @@ public:
 #undef RTARRAY_DO_CONSTRUCT
 #undef RTARRAY_DO_DESTROY
 #undef RTARRAY_DO_DEALLOCATE
+#undef RTARRAY_CPPVERSION_ATLEAST
 
 #endif RTARRAY_H

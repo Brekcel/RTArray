@@ -1,15 +1,18 @@
 # RTArray 
 ### C++ Header only implementation of a Fixed-Sized known at Runtime (RT)Array
 
-## Usage
+## Example
 ```c++
 #include<RTArray.h>
-...
-RTArray<int> array(10, 5);
-//or
-RTArray<int> array(5, [](size_t idx) {
-    return static_cast<int>(idx * idx);
+
+int j = 0;
+
+RTArray<int> arr(5, [&j](size_t idx) {
+	j += 2;
+	return static_cast<int>(j * idx);
 });
+
+int i = arr[3]; //i == 24
 ```
 
 ## Features
@@ -20,7 +23,7 @@ Optional usage of std::allocator to allow for different allocation methods to be
 
 If in debug mode or RTARRAY_OOB_CHECK is defined, [] operator is checked for out of bounds errors
 
-
+Implements most of the std::containers functions. Only missing is Iterators.
 
 ### Automatic detection of c++11 and c++17 enabling specific features:
 
@@ -28,12 +31,9 @@ If in debug mode or RTARRAY_OOB_CHECK is defined, [] operator is checked for out
 
 Usage of std::move in certain spots.
 
-Allows use of std::funcion instead of a plain function pointer.
-
 #### C++17:
 
 Adds [[nodiscard]] attribute to necessary functions.
-
 
 ## License
 
