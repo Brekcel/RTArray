@@ -44,7 +44,7 @@
 #endif
 
 #define RTARRAY_DO_OOB_CHECK(idx, length) \
-if (idx > length) {\
+if (idx >= length) {\
 std::ostringstream errMsg;\
 errMsg << "Attempted to access element at position " << idx << " in an array of size " << length << ".";\
 throw std::out_of_range(errMsg.str());\
@@ -94,8 +94,8 @@ public:
 		, Alloc allocator = Alloc()) : allocator(RTARRAY_MOVE(allocator)),
 	#else
 		) :
-#endif
-	ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
+	#endif
+		ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
 		for (size_type i = 0; i < arrSize; ++i) {
 			ptr[i] = RTARRAY_MOVE(function(i));
 		}
@@ -112,15 +112,49 @@ public:
 		, Alloc allocator = Alloc()) : allocator(RTARRAY_MOVE(allocator)),
 	#else
 		) :
-#endif
-	ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
+	#endif
+		ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
 		for (size_type i = 0; i < arrSize; ++i) {
 			RTARRAY_DO_CONSTRUCT(&ptr[i], to_be_copied);
 		}
 	}
 
-	///Destroys all elements in the array, then deallocates the data used by the array.
+	//As an RTArray copy is a deep copy, copying an RTArray can be VERY expensive,
+	//therefore disable access to copy ctor by default.
+#ifdef RTARRAY_COPY
+	///Performs a deep copy of one RTArray to another.
+	RTArray(const RTArray& other) :
+	#ifdef RTARRAY_ALLOC
+		allocator(other.allocator),
+	#endif
+		ptr(RTARRAY_DO_ALLOCATE(other.arrSize)), arrSize(other.arrSize) {
+		for (size_type i = 0; i < arrSize; ++i) {
+			RTARRAY_DO_CONSTRUCT(&ptr[i], other[i]);
+		}
+	}
+#else
+	RTArray(const RTArray& other) = delete;
+#endif
+
+	//Move ctor can only exist if move exists
+#ifdef RTARRAY_MOVE
+	///Move one RTArray into another.
+	///The RTArray that got moved should NOT be used again. Attempting to use it could cause nullptr accesses.
+	RTArray(RTArray&& other) :
+	#ifdef RTARRAY_ALLOC
+		allocator(RTARRAY_MOVE(other.allocator)),
+	#endif 
+		ptr(other.ptr), arrSize(other.arrSize) {
+		other.ptr = nullptr;
+		other.arrSize = 0;
+	}
+#endif
+///Destroys all elements in the array, then deallocates the data used by the array.
 	~RTArray() {
+	//ptr can only be null if this was moved. This can only be moved if std::move exists.
+	#ifdef RTARRAY_MOVE
+		if (ptr == nullptr) return;
+	#endif
 		//Destroy each element in reverse order
 		for (size_type i = arrSize - 1; i > 0; --i) {
 			RTARRAY_DO_DESTROY(&ptr[i]);

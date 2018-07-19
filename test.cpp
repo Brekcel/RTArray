@@ -1,6 +1,7 @@
 //
 // Created by Brekcel on 7.10.2018.
 //
+#define RTARRAY_COPY
 #include "RTArray.h"
 #include <iostream>
 
@@ -37,7 +38,8 @@ int main(int argc, char* argv[]) {
 		j += 2;
 		return static_cast<int>(j * idx);
 	});
-
+	RTArray<int> arr2 = arr;
+	RTArray<int> arr3 = std::move(arr);
 	int i = arr[3]; //i == 24
 	std::cout << "arr[3]: " << i << std::endl;
 	return 0;
