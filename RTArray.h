@@ -6,6 +6,10 @@
 //Created by Clayton Breckel on 7.10.2018
 //Header only implementation of a Fixed-Sized known at Runtime (RT)Array
 
+#include <sstream>
+#include <stdexcept>
+#include <iterator>
+
 //Until very recently, __cplusplus is 199711L on msvc compiler and _MSVC_LANG is the cpp version so check both
 #define RTARRAY_CPPVERSION_ATLEAST(VERSION) ( __cplusplus >= VERSION || _MSVC_LANG >= VERSION)
 
@@ -22,9 +26,6 @@
 #else
 #define RTARRAY_MOVE(x) x
 #endif
-
-#include <sstream>
-#include <stdexcept>
 //ANY VERSION
 #ifdef _DEBUG
 #define RTARRAY_OOB_CHECK
@@ -78,10 +79,10 @@ private:
 
 	//ptr is const as there is one and ONLY one situation where it should be changed after creation and that's move.
 	//EVERY other usage of this variable should NOT change the pointed to memory.
-	pointer const ptr;
+	pointer ptr;
 
 	//see ptr for why it's const.
-	const size_type arrSize;
+	size_type arrSize;
 
 public:
 //CONSTRUCTORS AND DESTRUCTOR
@@ -98,8 +99,8 @@ public:
 		, Alloc allocator = Alloc()) : allocator(RTARRAY_MOVE(allocator)),
 	#else
 		) :
-	#endif
-		ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
+#endif
+	ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
 		for (size_type i = 0; i < arrSize; ++i) {
 			ptr[i] = RTARRAY_MOVE(function(i));
 		}
@@ -116,15 +117,33 @@ public:
 		, Alloc allocator = Alloc()) : allocator(RTARRAY_MOVE(allocator)),
 	#else
 		) :
-	#endif
-		ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
+#endif
+	ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
 		for (size_type i = 0; i < arrSize; ++i) {
 			RTARRAY_DO_CONSTRUCT(&ptr[i], to_be_copied);
 		}
 	}
 
-	//As an RTArray copy is a deep copy, copying an RTArray can be VERY expensive,
-	//therefore disable access to copy ctor by default.
+	///Constructs a new RTArray with the given iterator
+	///ARGUMENTS
+	///Iter begin: The beginning of an iterator
+	///Iter end: The end of an iterator
+	template <class Iter>
+	RTArray(Iter begin, Iter end
+	#ifdef RTARRAY_ALLOC
+		, Alloc allocator = Alloc()) : allocator(RTARRAY_MOVE(allocator)),
+	#else
+		) :
+#endif
+	ptr(nullptr), arrSize(this->arrSize) {
+		ptr = RTARRAY_DO_ALLOCATE(arrSize);
+		for (size_t i = 0; begin != end; ++begin, ++i) {
+			RTARRAY_DO_CONSTRUCT(&ptr[i], RTARRAY_MOVE(*begin));
+		}
+	}
+
+//As an RTArray copy is a deep copy, copying an RTArray can be VERY expensive,
+//therefore disable access to copy ctor by default.
 #ifdef RTARRAY_COPY
 	///Performs a deep copy of one RTArray to another.
 	RTArray(const RTArray& other) :
@@ -149,10 +168,11 @@ public:
 		allocator(RTARRAY_MOVE(other.allocator)),
 	#endif 
 		ptr(other.ptr), arrSize(other.arrSize) {
-		const_cast<pointer>(other.ptr) = nullptr;
-		static_cast<size_type>(other.arrSize) = 0; //Not really sure why const_cast doesn't work with integer literals...
+		other.ptr = nullptr;
+		other.arrSize = 0;
 	}
 #endif
+
 ///Destroys all elements in the array, then deallocates the data used by the array.
 	~RTArray() {
 	//ptr can only be null if this was moved. This can only be moved if std::move exists.
@@ -251,9 +271,9 @@ public:
 	}
 //END CAPACITY
 
-};
+	};
 
-//Undefine all macros used
+	//Undefine all macros used
 #undef RTARRAY_MUST_USE
 #undef RTARRAY_MOVE
 #undef RTARRAY_CPPVERSION_ATLEAST

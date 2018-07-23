@@ -1,6 +1,7 @@
 //
 // Created by Brekcel on 7.10.2018.
 //
+#define RTARRAY_ALLOC
 #define RTARRAY_COPY
 #include "RTArray.h"
 #include <iostream>
@@ -32,7 +33,8 @@ int main(int argc, char* argv[]) {
 	//std::array
 	//std::vector
 	std::cout << "RTArraySize: " << sizeof(RTArray<Test>) << std::endl;
-
+	std::array<Test, 6> arr4 = {Test(3), Test(3), Test(3), Test(3), Test(3), Test(3)};
+	RTArray<Test> arrIter(arr4.begin(), arr4.end());
 	int j = 0;
 	RTArray<int> arr(5, [&j](size_t idx) {
 		j += 2;
