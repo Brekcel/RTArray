@@ -33,10 +33,10 @@
 
 #ifdef RTARRAY_ALLOC
 #include <memory>
-#define RTARRAY_DO_ALLOCATE(LEN) allocator.allocate(LEN)
-#define RTARRAY_DO_CONSTRUCT(POINTER, ...) allocator.construct(POINTER, __VA_ARGS__)
-#define RTARRAY_DO_DESTROY(POINTER) allocator.destroy(POINTER)
-#define RTARRAY_DO_DEALLOCATE(POINTER, LEN) allocator.deallocate(POINTER, LEN)
+#define RTARRAY_DO_ALLOCATE(LEN) this->allocator.allocate(LEN)
+#define RTARRAY_DO_CONSTRUCT(POINTER, ...) this->allocator.construct(POINTER, __VA_ARGS__)
+#define RTARRAY_DO_DESTROY(POINTER) this->allocator.destroy(POINTER)
+#define RTARRAY_DO_DEALLOCATE(POINTER, LEN) this->allocator.deallocate(POINTER, LEN)
 #else
 #define RTARRAY_DO_ALLOCATE(LEN) reinterpret_cast<T*>(new char[sizeof(T) * LEN])
 #define RTARRAY_DO_CONSTRUCT(POINTER, ...) new (POINTER) T(__VA_ARGS__)
@@ -96,7 +96,7 @@ public:
 	template <typename Function>
 	RTArray(size_type arrSize, Function function
 	#ifdef RTARRAY_ALLOC
-		, Alloc allocator = Alloc()) : allocator(RTARRAY_MOVE(allocator)),
+		, const Alloc& allocator = Alloc()) : allocator(allocator),
 	#else
 		) :
 #endif
@@ -114,7 +114,7 @@ public:
 
 	RTArray(size_type arrSize, const_reference to_be_copied
 	#ifdef RTARRAY_ALLOC
-		, Alloc allocator = Alloc()) : allocator(RTARRAY_MOVE(allocator)),
+		, const Alloc& allocator = Alloc()) : allocator(allocator),
 	#else
 		) :
 #endif
@@ -131,11 +131,11 @@ public:
 	template <class Iter>
 	RTArray(Iter begin, Iter end
 	#ifdef RTARRAY_ALLOC
-		, Alloc allocator = Alloc()) : allocator(RTARRAY_MOVE(allocator)),
+		, const Alloc& allocator = Alloc()) : allocator(allocator),
 	#else
 		) :
 #endif
-	ptr(nullptr), arrSize(this->arrSize) {
+	ptr(nullptr), arrSize(std::distance(begin, end)) {
 		ptr = RTARRAY_DO_ALLOCATE(arrSize);
 		for (size_t i = 0; begin != end; ++begin, ++i) {
 			RTARRAY_DO_CONSTRUCT(&ptr[i], RTARRAY_MOVE(*begin));
