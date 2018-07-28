@@ -1,7 +1,7 @@
 //
 // Created by Brekcel on 7.10.2018.
 //
-#define RTARRAY_ALLOC
+
 #define RTARRAY_COPY
 #include "RTArray.h"
 #include <iostream>
@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
 	//std::array
 	//std::vector
 	std::cout << "RTArraySize: " << sizeof(RTArray<Test>) << std::endl;
-	std::array<Test, 6> arr4 = {Test(3), Test(3), Test(3), Test(3), Test(3), Test(3)};
+	std::array<Test, 6> arr4 = {Test(3), Test(4), Test(5), Test(6), Test(7), Test(8)};
 	RTArray<Test> arrIter(arr4.begin(), arr4.end());
 	int j = 0;
 	RTArray<int> arr(5, [&j](size_t idx) {
@@ -44,5 +44,14 @@ int main(int argc, char* argv[]) {
 	RTArray<int> arr3 = std::move(arr);
 	int i = arr3[3]; //i == 24
 	std::cout << "arr[3]: " << i << std::endl;
+
+	for (const auto& t : arrIter) {
+		std::cout << "Iter item with value " << t.x << std::endl;
+	}
+
+	for (RTArray<Test>::reverse_iterator begin = arrIter.rbegin(); begin != arrIter.rend(); ++begin) {
+		std::cout << "Reverse Iter item with value " << begin->x << std::endl;
+	}
+
 	return 0;
 }

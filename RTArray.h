@@ -51,6 +51,8 @@ errMsg << "Attempted to access element at position " << idx << " in an array of 
 throw std::out_of_range(errMsg.str());\
 		}\
 
+#include <iterator>
+
 //T is the type that's to be used for the array
 template <class T
 #ifdef RTARRAY_ALLOC
@@ -67,6 +69,10 @@ public:
 	typedef const T& const_reference;
 	typedef size_t size_type;
 	typedef ptrdiff_t difference_type;
+	typedef pointer iterator;
+	typedef const_pointer const_iterator;
+	typedef std::reverse_iterator<iterator> reverse_iterator;
+	typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
 #ifdef RTARRAY_ALLOC
 	typedef Alloc Alloc;
@@ -99,8 +105,8 @@ public:
 		, const Alloc& allocator = Alloc()) : allocator(allocator),
 	#else
 		) :
-#endif
-	ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
+	#endif
+		ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
 		for (size_type i = 0; i < arrSize; ++i) {
 			ptr[i] = RTARRAY_MOVE(function(i));
 		}
@@ -111,14 +117,13 @@ public:
 	///size_type length: The length of the array
 	///const_reference to_be_copied: The value to be copied into each index
 	///const Alloc& allocator: The allocator to be used. Defaults to creating a new allocator.
-
 	RTArray(size_type arrSize, const_reference to_be_copied
 	#ifdef RTARRAY_ALLOC
 		, const Alloc& allocator = Alloc()) : allocator(allocator),
 	#else
 		) :
-#endif
-	ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
+	#endif
+		ptr(RTARRAY_DO_ALLOCATE(arrSize)), arrSize(arrSize) {
 		for (size_type i = 0; i < arrSize; ++i) {
 			RTARRAY_DO_CONSTRUCT(&ptr[i], to_be_copied);
 		}
@@ -134,8 +139,8 @@ public:
 		, const Alloc& allocator = Alloc()) : allocator(allocator),
 	#else
 		) :
-#endif
-	ptr(nullptr), arrSize(std::distance(begin, end)) {
+	#endif
+		ptr(nullptr), arrSize(std::distance(begin, end)) {
 		ptr = RTARRAY_DO_ALLOCATE(arrSize);
 		for (size_t i = 0; begin != end; ++begin, ++i) {
 			RTARRAY_DO_CONSTRUCT(&ptr[i], RTARRAY_MOVE(*begin));
@@ -188,6 +193,50 @@ public:
 	}
 
 //END CONSTRUCTORS AND DESTUCTOR
+
+//ITERATORS
+
+	///Returns an iterator to the beginning
+	RTARRAY_MUST_USE inline iterator begin() {
+		return ptr;
+	}
+
+	///Returns a const_iterator to the beginning
+	RTARRAY_MUST_USE inline const_iterator cbegin() {
+		return ptr;
+	}
+
+	///Returns an iterator to the end
+	RTARRAY_MUST_USE inline iterator end() {
+		return &ptr[arrSize];
+	}
+
+	///Returns a const_iterator to the end
+	RTARRAY_MUST_USE inline const_iterator cend() {
+		return &ptr[arrSize];
+	}
+
+	///Returns a revserse_iterator to the beginning
+	RTARRAY_MUST_USE inline  reverse_iterator rbegin() {
+		return reverse_iterator(&ptr[arrSize]);
+	}
+
+	///Returns a const_revserse_iterator to the beginning
+	RTARRAY_MUST_USE inline const_reverse_iterator crbegin() {
+		return const_reverse_iterator(&ptr[arrSize]);
+	}
+
+	///Returns a revserse_iterator to the end
+	RTARRAY_MUST_USE inline  reverse_iterator rend() {
+		return reverse_iterator(ptr);
+	}
+
+	///Returns a const_revserse_iterator to the end
+	RTARRAY_MUST_USE inline const_reverse_iterator crend() {
+		return const_reverse_iterator(ptr);
+	}
+
+//END ITERATORS
 
 //ELEMENT ACCESS
 
@@ -271,9 +320,9 @@ public:
 	}
 //END CAPACITY
 
-	};
+};
 
-	//Undefine all macros used
+//Undefine all macros used
 #undef RTARRAY_MUST_USE
 #undef RTARRAY_MOVE
 #undef RTARRAY_CPPVERSION_ATLEAST
