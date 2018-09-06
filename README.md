@@ -23,8 +23,6 @@ Optional usage of std::allocator to allow for different allocation methods to be
 
 If in debug mode or RTARRAY_OOB_CHECK is defined, [] operator is checked for out of bounds errors
 
-Implements most of the std::containers functions. Only missing is Iterators.
-
 ### Automatic detection of c++11 and c++17 enabling specific features:
 
 #### C++11:
